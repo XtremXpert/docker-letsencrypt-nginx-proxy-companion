@@ -3,10 +3,10 @@
 
 set -u
 
-if [[ -n "${ACME_TOS_HASH:-}" ]]; then
-    echo "Info: the ACME_TOS_HASH environment variable is no longer used by simp_le and has been deprecated."
-    echo "simp_le now implicitly agree to the ACME CA ToS."
-fi
+#if [[ -n "${ACME_TOS_HASH:-}" ]]; then
+#    echo "Info: the ACME_TOS_HASH environment variable is no longer used by simp_le and has been deprecated."
+#    echo "simp_le now implicitly agree to the ACME CA ToS."
+#fi
 
 function check_docker_socket {
     if [[ $DOCKER_HOST == unix://* ]]; then

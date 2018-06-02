@@ -173,46 +173,47 @@ function update_certs {
 
         for domain in "${!hosts_array}"; do
             # Add all the domains to certificate
-            params_d_str+=" -d $domain"
+            params_d_str+=" --domain $domain"
             # Add location configuration for the domain
-            add_location_configuration "$domain" || reload_nginx
+#            add_location_configuration "$domain" || reload_nginx
         done
 
         # The ACME account key full path is derived from the endpoint URI
         # + the account alias (set to 'default' if no alias is provided)
-        account_key_dir="../accounts/${acme_ca_uri#*://}"
-        account_key_full_path="${account_key_dir}/${account_alias}.json"
-        if [[ $REUSE_ACCOUNT_KEYS == true ]]; then
-            if [[ -f "$account_key_full_path" ]]; then
-                # If there is no symlink to the account key, create it
-                if [[ ! -L ./account_key.json ]]; then
-                    ln -sf "$account_key_full_path" ./account_key.json
-                # If the symlink target the wrong account key, replace it
-                elif [[ "$(readlink -f ./account_key.json)" != "$account_key_full_path" ]]; then
-                    ln -sf "$account_key_full_path" ./account_key.json
-                fi
-            fi
-        fi
+ #       account_key_dir="../accounts/${acme_ca_uri#*://}"
+ #       account_key_full_path="${account_key_dir}/${account_alias}.json"
+ #       if [[ $REUSE_ACCOUNT_KEYS == true ]]; then
+ #           if [[ -f "$account_key_full_path" ]]; then
+ #               # If there is no symlink to the account key, create it
+ #               if [[ ! -L ./account_key.json ]]; then
+ #                   ln -sf "$account_key_full_path" ./account_key.json
+ #               # If the symlink target the wrong account key, replace it
+ #               elif [[ "$(readlink -f ./account_key.json)" != "$account_key_full_path" ]]; then
+ #                   ln -sf "$account_key_full_path" ./account_key.json
+ #               fi
+ #           fi
+ #       fi
 
         echo "Creating/renewal $base_domain certificates... (${hosts_array_expanded[*]})"
-        /usr/bin/simp_le \
-            -f account_key.json -f key.pem -f chain.pem -f fullchain.pem -f cert.pem \
+        /usr/bin/certbot \
             $params_d_str \
-            --cert_key_size=$cert_keysize \
-            --server=$acme_ca_uri \
-            --default_root /usr/share/nginx/html/
+            --rsa_key_size=$cert_keysize \
+            --dns-cloudflare \
+            --dns-cloudflare-credential /etc/certbot/cloudflare.ini \
+            --non-interactive \
+            --adree-tos
 
         simp_le_return=$?
 
-        if [[ $REUSE_ACCOUNT_KEYS == true ]]; then
-            # If the account key to be reused does not exist yet, copy it
-            # from the CWD and replace the file in CWD with a symlink
-            if [[ ! -f "$account_key_full_path" && -f ./account_key.json ]]; then
-                mkdir -p "$account_key_dir"
-                cp ./account_key.json "$account_key_full_path"
-                ln -sf "$account_key_full_path" ./account_key.json
-            fi
-        fi
+#        if [[ $REUSE_ACCOUNT_KEYS == true ]]; then
+#            # If the account key to be reused does not exist yet, copy it
+#            # from the CWD and replace the file in CWD with a symlink
+#            if [[ ! -f "$account_key_full_path" && -f ./account_key.json ]]; then
+#                mkdir -p "$account_key_dir"
+#                cp ./account_key.json "$account_key_full_path"
+#                ln -sf "$account_key_full_path" ./account_key.json
+#            fi
+#        fi
 
         popd || return
 
